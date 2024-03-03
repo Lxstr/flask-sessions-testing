@@ -1,0 +1,60 @@
+version: "3.8"
+
+volumes:
+  postgresdb_data:
+
+services:
+  flask:
+    build: ./flask
+    container_name: flask_app
+    restart: always
+    command: gunicorn --workers 4 --threads=4 --worker-class=gthread --forwarded-allow-ips="*" --bind 0.0.0.0:8080 --timeout 300 --log-file=- --reload 'run:app'
+    stdin_open: True
+    tty: True
+    depends_on:
+      - db
+    volumes:
+      - ./flask/:/app/
+    env_file:
+      - ./flask/.env
+    expose:
+      - 8080
+
+  nginx:
+    build: ./nginx
+    container_name: nginx_http
+    logging:
+      driver: none
+    restart: always
+    depends_on:
+      - flask
+    ports:
+      - "80:80"
+    extra_hosts:
+    - "host.docker.internal:host-gateway"
+
+  # postgres db
+  db:
+    build: ./psql
+    container_name: postgresdb
+    restart: always
+    volumes:
+      - postgresdb_data:/var/lib/postgresql/data/
+    environment:
+      POSTGRES_DB: ${POSTGRES_HOST}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PGDATA: /var/lib/postgresql/data
+    ports:
+      - 5432:5432
+    expose:
+      - 5432
+
+  adminer:
+    container_name: adminer
+    build: ./adminer
+    restart: always
+    depends_on:
+      - db
+    ports:
+      - 8081:8080

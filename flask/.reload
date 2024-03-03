@@ -1,0 +1,1 @@
+#this file is used to reload flask uWSGI via app.ini config settings 
