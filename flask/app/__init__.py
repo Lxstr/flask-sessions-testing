@@ -12,6 +12,7 @@ def create_app():
 
     app.config.from_object(Config)
     db.init_app(app)
+    app.config["SESSION_SQLALCHEMY"] = db
 
     sess.init_app(app)
 
